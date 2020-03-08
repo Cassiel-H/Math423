@@ -1,0 +1,213 @@
+---
+title: "Assignment3"
+author: "Jiachen Huo (260779330)"
+date: '2019-12-05'
+output: html_document
+---
+
+## Q1 Data analysis report
+
+Simple Summarization of data set
+```{r}
+file1 <- "http://www.math.mcgill.ca/yyang/regression/data/abalone.csv"
+abalone <- read.csv(file1, header = TRUE)
+names(abalone)<-c('Height','Rings')
+summary_var<-data.frame(Variance=var(abalone))
+summary(abalone)
+summary_var
+```
+
+Plot the individual histogram 1.The histogram of Height
+```{r}
+size<-nrow(abalone)-1
+size
+hist(abalone$Height, breaks = 75, main = "Histogram of Height", xlab="Height (mm)", ylab="Density", probability = TRUE,las=1)
+densH <- density(abalone$Height,bw=0.01)
+lines(smooth.spline(x = densH$x, y = densH$y), col = "orange", lwd = 2) 
+box()
+```
+
+2. Then the graph of Rings
+```{r}
+hist(abalone$Rings, breaks=75, main="Histogram of Rings", axes=T, xlab="Rings",ylab="Density",probability = TRUE,las=1,xlim=c(0,29))
+densR<-density(abalone$Rings, bw=1)
+lines(smooth.spline(x=densR$x, y=densR$y), col="orange", lwd=2)
+axis(side = 1, at = c(1,seq(5,25,5),29), labels = c(1,seq(5,25,5),29))
+box()
+```
+
+Scatter Plot of Height VS Rings counted
+
+```{r}
+plot(abalone$Height, abalone$Rings, pch = 19, cex = 0.2, axes = TRUE, xlab="Height",ylab="Rings",las=1)
+MODEL <- lm(abalone$Rings ~ abalone$Height)
+abline(MODEL, col = "orange", lwd = 2)
+meanX<-round(mean(abalone$Height),digits=2)
+meanY<-round(mean(abalone$Rings),digits=2)
+abline(v=meanX,h=meanY,lty=2)
+axis(side=4,at=meanY,labels=as.character(meanY),las=1,font=5)
+axis(side=1,at=meanX,labels=as.character(meanX),font=5)
+```
+
+plot the predictor against residuals 
+```{r}
+plot(MODEL,which=1)
+```
+
+fliter out outliers
+```{r}
+
+x<-abalone$Height
+y<-abalone$Rings
+
+newAbalone<-subset(abalone, x>0.04&x<0.24&y>3.5&y<15.5)
+newX<-newAbalone$Height
+newY<-newAbalone$Rings
+
+plot(newX,newY, pch = 19, cex = 0.2, axes = TRUE, xlab="Height",ylab="Rings",las=1,main="Diagnostic Modeling")
+newModel<-lm(newY~newX)
+abline(newModel, col = "orange", lwd = 2)
+newMeanX<-round(mean(newX),digits=2)
+newMeanY<-round(mean(newY),digits=2)
+
+abline(v=newMeanX,h=newMeanY,lty=2)
+axis(side=4,at=newMeanY,labels=as.character(newMeanY),las=1,font=5)
+axis(side=1,at=newMeanX,labels=as.character(newMeanX),font=5)
+
+plot(newModel, which=1,cex=0.5,las=1)
+
+```
+
+residual distributions and Normal QQ plot
+```{r}
+par(mfrow=c(1,2))
+hist(residuals(newModel), breaks = 40, freq = FALSE, xlab = "Residual ", main = "Residual distribution",las=1)
+curve(dnorm(x, mean = 0, sd = sd(residuals(newModel))), add = TRUE, col = "orange")
+box()
+qqnorm(residuals(newModel),las=1)
+qqline(residuals(newModel))
+```
+
+inference and result
+```{r}
+summary(newModel)
+```
+
+95% C.I. for intercept and slope
+```{r}
+confint(newModel, level=0.95)
+mytable <- summary(newModel)$coefficients 
+mytable
+```
+
+95% C.I. for h=0.128
+```{r}
+predata<- data.frame(newX=0.128)
+predict(newModel, newdata = predata, interval = 'confidence',level=0.95)
+```
+
+99% C.I. for h=0.132
+```{r}
+predata2<-data.frame(newX=0.132)
+predict(newModel, newdata = predata2, interval = 'confidence',level=0.99)
+```
+
+
+## This is for Q3
+
+1) Plot the data
+```{r}
+data(stackloss)
+names(stackloss)
+plot(stackloss)
+```
+
+2) fit multiple regression model
+```{r}
+model <- lm(stack.loss~Air.Flow + Water.Temp + Acid.Conc., data = stackloss)
+summary(model)
+```
+
+3) 90% C.I. for coefficients
+```{r}
+confint(model, level = 0.9)
+```
+
+4) 90% P.I.
+```{r}
+dataNew<-data.frame(Air.Flow = 58, Water.Temp = 20, Acid.Conc.=86)
+predict(model, newdata = dataNew, interval = "prediction", level = 0.99)
+```
+
+5) test null hypothesis
+```{r}
+anova(model)
+```
+
+##This is for Q4
+1)plot the data
+```{r}
+data(ChickWeight) 
+names(ChickWeight) 
+attach(ChickWeight)
+
+coplot(weight ~ Time | Chick, data = ChickWeight, type = "b",show.given = FALSE)
+```
+
+2)Extract the data corresponding to the sixth chick
+```{r}
+Chick6 <- ChickWeight[ChickWeight$Chick == 6,]
+y<-Chick6$weight
+x<-Chick6$Time
+model<-lm(y~x)
+plot(x,residuals(model),xlab='time',main='residual of linear model')
+abline(h=0,col='orange')
+summary(model)
+
+newModel<-lm(y~poly(x,4))
+plot(x,residuals(newModel),xlab='time',main='residual of polynomial model')
+abline(h=0,col='orange')
+summary(newModel)
+```
+
+3)Now use all the data. Fit a linear model to predict weight from time
+```{r}
+newY<-ChickWeight$weight
+newX<-ChickWeight$Time
+model2<-lm(newY~newX)
+plot(newX,residuals(model2),xlab='time',main='residual of linear model')
+abline(h=0,col='orange')
+summary(model2)
+
+newModel2<-lm(newY~poly(newX,10))
+plot(newX,residuals(new Model2),xlab='time',main='residual of polynomial model')
+abline(h=0,col='orange')
+summary(newModel2)
+```
+
+
+##This is for Q5
+
+1)
+```{r}
+file<-"http://www.math.mcgill.ca/yyang/regression/data/cigs.csv"
+Cigs<-read.csv(file,header=T) 
+x1<-Cigs$TAR
+x2<-Cigs$NICOTINE
+x3<-Cigs$WEIGHT
+y<-Cigs$CO 
+dataLM<-data.frame(x1,x2,x3,y)
+
+model<-lm(y~x1+x2+x3, data=dataLM)
+model1<-lm(y~x1+x2,data=dataLM)
+anova(model1,model)
+
+model2<-lm(y~x1,data=dataLM)
+anova(model2,model1)
+
+model3<-lm(y~1)
+anova(model3,model1)
+```
+
+
+
