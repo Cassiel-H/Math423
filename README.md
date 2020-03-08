@@ -5,3 +5,4 @@ linear regression
   
   source: https://archive.ics.uci.edu/ml/datasets/Abalone
   
+  The folder contains a final report and the R markdown of it.
